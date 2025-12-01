@@ -17,7 +17,7 @@ experiment:
   
 # 输入输出路径
 input:
-  data_dir: "./dataset"  # 原始数据目录
+  data_dir: "./dataset/raw"  # 原始数据目录
   preparation_dir: "${output.base_dir}/prepared_systems"  # 准备结果目录
   alchemical_dir: "${output.base_dir}/alchemical_results"  # 炼金术结果目录
   

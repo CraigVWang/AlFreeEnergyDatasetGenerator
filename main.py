@@ -33,7 +33,8 @@ class AlchemicalDataGenerator:
             config: Hydra配置对象，包含所有实验参数
         """
         self.config = config
-        self.metadata_file = Path("./dataset/metadata.csv")
+        self.metadata_dir = Path(self.config.output.metadata_dir)
+        self.metadata_file = self.metadata_dir / "metadata.csv"
         self.metadata = []
         
         # 各阶段处理器

@@ -54,30 +54,29 @@ class StructurePreprocessor:
         self.raw_dir = Path(self.config.input.data_dir)
         self.preprocessed_dir = Path(self.config.output.preprocessed_dir)
         self.metadata_dir = Path(self.config.output.metadata_dir)
-        
-        self.setup_directories()
         self.metadata_file = self.metadata_dir / "metadata.csv"
+        self.setup_directories()
         
     def setup_directories(self):
         """根据配置创建必要的目录结构"""
         # 确保原始数据目录存在
-        raw_dir = Path(self.config['raw_directory'])
+        raw_dir = Path(self.config.dataset.raw_directory)
         if not raw_dir.exists():
             raw_dir.mkdir(parents=True, exist_ok=True)
             print(f"📁 创建原始数据目录: {raw_dir}")
         
         # 创建预处理输出目录
-        self.preprocessed_dir = Path(self.config['preprocessed_directory'])
+        self.preprocessed_dir = Path(self.config.dataset.preprocessed_directory)
         self.preprocessed_dir.mkdir(parents=True, exist_ok=True)
         
         # 创建元数据输出目录
-        metadata_dir = Path(self.config['metadata_directory'])
+        metadata_dir = Path(self.config.dataset.metadata_directory)
         metadata_dir.mkdir(parents=True, exist_ok=True)
         
         print("📂 目录设置完成:")
-        print(f"   - 原始数据目录: {self.config['raw_directory']}")
-        print(f"   - 预处理目录: {self.config['preprocessed_directory']}")
-        print(f"   - 元数据目录: {self.config['metadata_directory']}")
+        print(f"   - 原始数据目录: {self.config.dataset.raw_directory}")
+        print(f"   - 预处理目录: {self.config.dataset.preprocessed_directory}")
+        print(f"   - 元数据目录: {self.config.dataset.metadata_directory}")
         print(f"   - 元数据文件: {self.metadata_file}")
         
         # 显示选定的文件格式
@@ -262,7 +261,7 @@ class StructurePreprocessor:
         返回:
             包含文件信息的字典列表
         """
-        root_dir = self.config['raw_directory']
+        root_dir = self.config.dataset.raw_directory
         
         # 创建现有分子的查找字典
         existing_molecules = {item['name']: item for item in existing_metadata}
