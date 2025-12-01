@@ -1,0 +1,36 @@
+# config/base.yaml - 统一的基础配置
+# 作者: CraigV Wang
+# 版本：1.0
+
+defaults:
+  - _self_
+
+# 实验信息
+experiment:
+  name: "炼金术数据生成实验"
+  description: "执行完整的自由能微扰数据生成流程"
+  
+# 输入输出路径
+input:
+  data_dir: "./data"  # 原始数据目录
+  preparation_dir: "${output.base_dir}/prepared_systems"  # 准备结果目录
+  alchemical_dir: "${output.base_dir}/alchemical_results"  # 炼金术结果目录
+  
+output:
+  base_dir: "./dataset"  # 基础输出目录
+  preprocessed_dir: "${output.base_dir}/preprocessed"  # 预处理目录
+  metadata_dir: "${output.base_dir}/metadata"  # 元数据目录
+  prepared_dir: "${output.base_dir}/prepared_systems"  # 系统准备目录
+  alchemical_dir: "${output.base_dir}/alchemical_results"  # 炼金术结果目录
+  analysis_dir: "${output.base_dir}/analysis_results"  # 分析结果目录
+  
+# 日志配置
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "${output.base_dir}/logs/experiment.log"
+  
+# 运行模式
+mode: "full"  # 可选: preprocess_only, full, test_single
+test_single: false
+selected_formats: null  # 可选: ["pdb", "mol2", "sdf", "xyz"]

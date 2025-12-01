@@ -1,0 +1,42 @@
+# 数据集预处理配置
+# 作者: CraigV Wang
+# 版本：1.0
+
+defaults:
+  - base  # 继承基础配置
+
+# 数据集配置
+dataset:
+  # 目录配置
+  raw_directory: ${input.data_dir}  # 原始数据目录
+  preprocessed_directory: ${output.preprocessed_dir}  # 预处理目录
+  metadata_directory: ${output.metadata_dir}  # 元数据目录
+  
+  # 文件格式支持
+  supported_formats: [".pdb", ".cif", ".mol2", ".sdf", ".xyz"]
+  
+  # 转换设置
+  conversion:
+    default_output_format: "pdb"  # 默认输出格式
+    xyz_converter:
+      auto_optimize: true  # 自动优化结构
+      max_optimization_attempts: 5  # 最大优化尝试次数
+      residue_name: "MOL"  # 残基名称
+      chain_id: "A"  # 链ID
+  
+  # PDB处理设置
+  pdb_processing:
+    remove_heteroatoms: false  # 是否移除杂原子
+    preserve_original_structure: true  # 是否保持原始结构
+  
+  # 验证设置
+  validation:
+    check_bond_lengths: true  # 检查键长
+    check_formal_charges: true  # 检查形式电荷
+    max_bond_length: 3.0  # 最大键长 (Å)
+    min_bond_length: 0.5  # 最小键长 (Å)
+  
+  # 批次处理
+  batch_processing:
+    max_workers: 4  # 最大工作线程数
+    batch_size: 10  # 批处理大小

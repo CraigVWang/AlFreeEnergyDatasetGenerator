@@ -1,0 +1,45 @@
+# 炼金术结果分析配置
+# 作者: CraigV Wang
+# 版本：1.0
+
+defaults:
+  - base  # 继承基础配置
+
+# 输入配置
+input:
+  alchemical_dir: ${output.base_dir}/alchemical_results  # 炼金术结果目录
+  
+# 输出配置
+output:
+  base_dir: ./dataset  # 基础输出目录
+  analysis_dir: ${output.base_dir}/analysis_results  # 分析结果目录
+  
+# 分析参数
+analysis:
+  # 绘图参数
+  plot_format: png  # 图像格式: png, pdf, svg
+  plot_dpi: 300  # 图像分辨率
+  figure_size: [10, 8]  # 图像大小
+  
+  # 质量评估阈值（与simu_fep.ipynb中的采样参数对应）
+  convergence_threshold: 0.1  # 相对误差收敛阈值（10%）
+  sampling_sufficiency_threshold: 50  # 最小迭代次数阈值
+  
+  # 自由能分析参数
+  free_energy:
+    reference_state: 0  # 参考状态索引（λ=1.0）
+    target_state: -1  # 目标状态索引（λ=0.0）
+  
+  # 收敛性分析
+  convergence:
+    burn_in_fraction: 0.1  # 燃烧期比例
+    statistical_inefficiency_method: "timeseries"  # 统计无效性计算方法
+  
+  # 可视化参数
+  visualization:
+    show_replica_trajectories: true  # 显示副本轨迹
+    show_energy_timeseries: true  # 显示能量时间序列
+    show_free_energy_profile: true  # 显示自由能剖面
+
+# 测试模式
+test_single: false  # 是否只测试单个样本

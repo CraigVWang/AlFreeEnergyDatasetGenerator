@@ -1,0 +1,65 @@
+# 系统准备配置
+# 作者: CraigV Wang
+# 版本：1.0 (与simu_fep.ipynb保持一致)
+
+defaults:
+  - base  # 继承基础配置
+
+preparation:
+  # 力场配置
+  forcefield:
+    files: ["amber14/protein.ff14SB.xml", "amber14/tip3p.xml"]
+    use_gaff: true  # 是否使用GAFF力场
+  
+  # 系统创建配置
+  system:
+    add_hydrogens: true  # 使用Modeller.addHydrogens()添加氢原子
+    nonbonded_method: "PME"  # PME, NoCutoff, CutoffNonPeriodic, CutoffPeriodic
+    cutoff: 1.0  # nm，PME截止距离
+    constraints: "HBonds"  # None, HBonds, AllBonds, HAngles
+    rigid_water: true
+    ewald_error_tolerance: 0.0005
+    centering_threshold: 0.1  # nm，大于此值则进行居中修正
+  
+  # 溶剂化配置（与simu_fep.ipynb完全一致）
+  solvent:
+    model: "tip3p"  # 溶剂模型
+    box_size: 8.0  # nm，立方盒子边长（8.0×8.0×8.0 nm盒子）
+    padding: null  # nm，可选，分子到盒子边缘的距离
+    positive_ion: "Na+"  # 正离子
+    negative_ion: "Cl-"  # 负离子
+    ionic_strength: 0.0  # M，离子强度（不添加离子）
+  
+  # 积分器配置（与simu_fep.ipynb完全一致）
+  integrator:
+    temperature: 300.0  # K
+    friction_coeff: 1.0  # 1/ps
+    time_step: 2.0  # fs
+  
+  # 平台配置（与simu_fep.ipynb完全一致）
+  platform:
+    use_cuda: true  # 使用GPU加速
+    device_index: "0"  # GPU设备索引
+    precision: "mixed"  # mixed, single, double
+  
+  # 能量最小化配置（与simu_fep.ipynb完全一致）
+  minimization:
+    max_iterations: 1000  # 最大迭代次数
+    tolerance: 10.0  # kJ/mol，能量收敛容差
+  
+  # 加热配置（与simu_fep.ipynb完全一致）
+  heating:
+    initial_temperature: 50.0  # K，初始温度
+    target_temperature: 300.0  # K，目标温度
+    temperature_step: 50.0  # K，温度步长
+    steps_per_temperature: 5000  # 每温度步数
+  
+  # 平衡配置（与simu_fep.ipynb完全一致）
+  equilibration:
+    use_barostat: true  # 使用压力控制
+    pressure: 1.0  # atm，目标压力
+    barostat_frequency: 25  # 压力控制频率
+    npt_steps: 50000  # NPT平衡步数
+  
+  # 元数据文件路径
+  metadata_file: "./dataset/metadata.csv"

@@ -1,0 +1,47 @@
+# 炼金术自由能模拟配置文件
+# 作者: CraigV Wang
+# 版本：1.0 (与simu_fep.ipynb保持一致)
+# config/alchemical.yaml - 最终版本
+
+defaults:
+  - base
+
+# 炼金术模拟配置
+alchemical:
+  # 模拟参数（与simu_fep.ipynb完全一致）
+  temperature: 300.0  # 温度 (K)
+  
+  # 保守参数（测试用）- 与simu_fep.ipynb的保守参数完全一致
+  time_step: 0.1  # 时间步长 (fs) - 非常小的步长确保稳定性
+  collision_rate: 5.0  # 碰撞频率 (1/ps) - 更高的碰撞频率
+  
+  # 副本交换参数（测试用）- 与simu_fep.ipynb完全一致
+  total_iterations: 50  # 总迭代次数 - 更少的迭代用于测试
+  steps_per_iteration: 50  # 每迭代步数 - 很少的步数
+  checkpoint_interval: 10  # 检查点间隔
+  
+  # Lambda调度 - 使用分段定义（在代码中动态计算）
+  lambda_schedule:
+    segments:
+      - [1.0, 0.95, 8]      # 从1.0到0.95，8个点
+      - [0.95, 0.8, 12]     # 从0.95到0.8，12个点
+      - [0.8, 0.5, 12]      # 从0.8到0.5，12个点
+      - [0.5, 0.2, 12]      # 从0.5到0.2，12个点
+      - [0.2, 0.0, 12]      # 从0.2到0.0，12个点
+  
+  # 计算平台（与simu_fep.ipynb完全一致）
+  platform:
+    name: "CUDA"  # 使用CUDA平台
+    precision: "mixed"  # 混合精度
+  
+  # 炼金术工厂配置
+  factory:
+    type: "AbsoluteAlchemicalFactory"  # 绝对炼金术工厂
+  
+  # 采样器配置
+  sampler:
+    type: "ReplicaExchangeSampler"  # 副本交换采样器
+    replica_mixing_scheme: "swap-neighbors"  # 副本混合方案
+
+# 测试模式
+test_single: false  # 是否只测试单个样本
