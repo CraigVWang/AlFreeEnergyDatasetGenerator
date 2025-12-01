@@ -2,8 +2,7 @@
 # 作者: CraigV Wang
 # 版本：1.0
 
-defaults:
-  - base  # 继承基础配置
+
 
 # 输入配置
 input:

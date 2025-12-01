@@ -1,0 +1,4 @@
+- mode=test_single
+- test_single=true
+- preparation.platform.use_cuda=false
+- alchemical.platform.name=CPU

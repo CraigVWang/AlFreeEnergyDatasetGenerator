@@ -12,6 +12,7 @@ import shutil
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+from omegaconf import DictConfig, OmegaConf
 
 # 导入分子处理相关的库
 from openff.toolkit import Molecule

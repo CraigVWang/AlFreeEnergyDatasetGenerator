@@ -1,0 +1,142 @@
+experiment:
+  name: 炼金术数据生成实验
+  description: 执行完整的自由能微扰数据生成流程
+input:
+  data_dir: ./data
+  preparation_dir: ${output.base_dir}/prepared_systems
+  alchemical_dir: ${output.base_dir}/alchemical_results
+output:
+  base_dir: ./dataset
+  preprocessed_dir: ${output.base_dir}/preprocessed
+  metadata_dir: ${output.base_dir}/metadata
+  prepared_dir: ${output.base_dir}/prepared_systems
+  alchemical_dir: ${output.base_dir}/alchemical_results
+  analysis_dir: ${output.base_dir}/analysis_results
+logging:
+  level: INFO
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  file: ${output.base_dir}/logs/experiment.log
+mode: test_single
+test_single: true
+selected_formats: null
+dataset:
+  raw_directory: ${input.data_dir}
+  preprocessed_directory: ${output.preprocessed_dir}
+  metadata_directory: ${output.metadata_dir}
+  supported_formats:
+  - .pdb
+  - .cif
+  - .mol2
+  - .sdf
+  - .xyz
+  conversion:
+    default_output_format: pdb
+    xyz_converter:
+      auto_optimize: true
+      max_optimization_attempts: 5
+      residue_name: MOL
+      chain_id: A
+  pdb_processing:
+    remove_heteroatoms: false
+    preserve_original_structure: true
+  validation:
+    check_bond_lengths: true
+    check_formal_charges: true
+    max_bond_length: 3.0
+    min_bond_length: 0.5
+  batch_processing:
+    max_workers: 4
+    batch_size: 10
+preparation:
+  forcefield:
+    files:
+    - amber14/protein.ff14SB.xml
+    - amber14/tip3p.xml
+    use_gaff: true
+  system:
+    add_hydrogens: true
+    nonbonded_method: PME
+    cutoff: 1.0
+    constraints: HBonds
+    rigid_water: true
+    ewald_error_tolerance: 0.0005
+    centering_threshold: 0.1
+  solvent:
+    model: tip3p
+    box_size: 8.0
+    padding: null
+    positive_ion: Na+
+    negative_ion: Cl-
+    ionic_strength: 0.0
+  integrator:
+    temperature: 300.0
+    friction_coeff: 1.0
+    time_step: 2.0
+  platform:
+    use_cuda: false
+    device_index: '0'
+    precision: mixed
+  minimization:
+    max_iterations: 1000
+    tolerance: 10.0
+  heating:
+    initial_temperature: 50.0
+    target_temperature: 300.0
+    temperature_step: 50.0
+    steps_per_temperature: 5000
+  equilibration:
+    use_barostat: true
+    pressure: 1.0
+    barostat_frequency: 25
+    npt_steps: 50000
+  metadata_file: ./dataset/metadata.csv
+alchemical:
+  temperature: 300.0
+  time_step: 0.1
+  collision_rate: 5.0
+  total_iterations: 50
+  steps_per_iteration: 50
+  checkpoint_interval: 10
+  lambda_schedule:
+    segments:
+    - - 1.0
+      - 0.95
+      - 8
+    - - 0.95
+      - 0.8
+      - 12
+    - - 0.8
+      - 0.5
+      - 12
+    - - 0.5
+      - 0.2
+      - 12
+    - - 0.2
+      - 0.0
+      - 12
+  platform:
+    name: CPU
+    precision: mixed
+  factory:
+    type: AbsoluteAlchemicalFactory
+  sampler:
+    type: ReplicaExchangeSampler
+    replica_mixing_scheme: swap-neighbors
+analysis:
+  plot_format: png
+  plot_dpi: 300
+  figure_size:
+  - 10
+  - 8
+  convergence_threshold: 0.1
+  sampling_sufficiency_threshold: 50
+  free_energy:
+    reference_state: 0
+    target_state: -1
+  convergence:
+    burn_in_fraction: 0.1
+    statistical_inefficiency_method: timeseries
+  visualization:
+    show_replica_trajectories: true
+    show_energy_timeseries: true
+    show_free_energy_profile: true

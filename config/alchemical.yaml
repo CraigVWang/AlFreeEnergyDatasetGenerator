@@ -3,8 +3,7 @@
 # 版本：1.0 (与simu_fep.ipynb保持一致)
 # config/alchemical.yaml - 最终版本
 
-defaults:
-  - base
+
 
 # 炼金术模拟配置
 alchemical:

@@ -219,8 +219,7 @@ class AlchemicalDataGenerator:
         
         if self.preprocessor is None:
             # 将OmegaConf转换为字典
-            config_dict = OmegaConf.to_container(self.config.dataset, resolve=True)
-            self.preprocessor = StructurePreprocessor(config_dict, selected_formats)
+            self.preprocessor = StructurePreprocessor(self.config, selected_formats)
         
         result = self.preprocessor.run(test_single=test_single)
         
