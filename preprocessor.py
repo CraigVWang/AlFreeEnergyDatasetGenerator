@@ -154,7 +154,7 @@ class StructurePreprocessor:
         
         # 写入文件
         with open(self.metadata_file, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.DictWriter(f, fieldnames=sorted(all_columns))
+            writer = csv.DictWriter(f, fieldnames=all_columns)
             writer.writeheader()
             for row in data:
                 writer.writerow(row)

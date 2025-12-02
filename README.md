@@ -1,6 +1,31 @@
 # AlFreeEnergyDatasetGenerator
 
+# 1. 只运行预处理，处理PDB和SDF格式
+python run.py preprocess --formats pdb sdf
 
+# 2. 运行完整流程，使用GPU，指定输出目录
+python run.py full --gpu --gpu-device 0 --output-dir ./my_experiment
+
+# 3. 运行单个样本测试，使用保守的lambda调度
+python run.py test --lambda-schedule conservative
+
+# 4. 运行测试模式，减少迭代次数
+python run.py test --test-iterations 10 --test-steps 100
+
+# 5. 直接覆盖配置参数
+python run.py full --override "alchemical.total_iterations=100" "alchemical.steps_per_iteration=500"
+
+# 6. 完整示例：指定所有参数
+python run.py full \
+  --formats pdb sdf xyz \
+  --gpu \
+  --gpu-device 0 \
+  --lambda-schedule conservative \
+  --output-dir ./results \
+  --experiment-name "My_FEP_Experiment" \
+  --override "preparation.solvent.box_size=10.0" \
+  --verbose
+  
 ## 项目结构
 AlFreeEnergyDatasetGenerator/
 ├── main.py                      # 主程序入口
