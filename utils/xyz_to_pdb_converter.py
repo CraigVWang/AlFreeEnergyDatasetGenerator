@@ -169,7 +169,7 @@ def create_mol_from_atoms(atoms, charge=0):
     return mol
 
 
-def set_pdb_info(mol, residue_name="MOL", chain_id="A"):
+def set_pdb_info(mol, residue_name="LIG", chain_id="A"):
     """
     为分子设置 PDB 残基信息
 
@@ -178,7 +178,7 @@ def set_pdb_info(mol, residue_name="MOL", chain_id="A"):
     mol : rdkit.Chem.Mol
         分子对象
     residue_name : str
-        残基名称（默认 MOL）
+        残基名称（默认 LIG）
     chain_id : str
         链 ID（默认 A）
     """
@@ -334,7 +334,7 @@ def optimize_structure(mol, max_attempts=5):
     return mol, False
 
 
-def convert_xyz_to_pdb(xyz_file, output_path=None, residue_name="MOL", chain="A", auto_optimize=True, max_optimization_attempts=5):
+def convert_xyz_to_pdb(xyz_file, output_path=None, residue_name="LIG", chain="A", auto_optimize=False, max_optimization_attempts=5):
     """
     使用 xyz_to_pdb.py 转换器将 XYZ 文件转换为 PDB 格式
     
@@ -345,9 +345,9 @@ def convert_xyz_to_pdb(xyz_file, output_path=None, residue_name="MOL", chain="A"
     output_pdb_path : str, optional
         输出的 PDB 文件路径
     residue_name : str, optional
-        PDB 残基名称，默认 "MOL"
+        PDB 残基名称，默认 "LIG"
     auto_optimize : bool, optional
-        是否自动进行几何优化，默认 True
+        是否自动进行几何优化，默认 False
     max_optimization_attempts : int, optional
         最大优化尝试次数，默认 5
         

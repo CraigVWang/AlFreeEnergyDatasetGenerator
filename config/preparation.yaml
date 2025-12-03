@@ -25,9 +25,9 @@ preparation:
     model: "tip3p"  # 溶剂模型
     box_size: 8.0  # nm，立方盒子边长（8.0×8.0×8.0 nm盒子）
     padding: null  # nm，可选，分子到盒子边缘的距离
-    positive_ion: "Na+"  # 正离子
-    negative_ion: "Cl-"  # 负离子
-    ionic_strength: 0.0  # M，离子强度（不添加离子）
+    positive_ion: null  # 正离子
+    negative_ion: null  # 负离子
+    ionic_strength: null  # M，离子强度（不添加离子）
   
   # 积分器配置（与simu_fep.ipynb完全一致）
   integrator:

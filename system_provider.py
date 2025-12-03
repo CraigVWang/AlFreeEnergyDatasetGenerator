@@ -2,7 +2,7 @@
 分子系统提供器模块
 功能：为炼金术自由能模拟准备完整的分子系统
 作者：CraigV Wang
-版本：2.1
+版本：2.2
 """
 
 import os
@@ -64,7 +64,7 @@ class SystemProvider:
             print(f"❌ 读取文件失败 {file_path}: {e}")
             return None, None
     
-    def create_forcefield(self, mol_sdf: Optional[Molecule] = None):
+    def create_forcefield(self, mol: Optional[Molecule] = None):
         """
         创建力场，包含GAFF小分子力场
         从配置中读取力场参数
@@ -72,18 +72,17 @@ class SystemProvider:
         forcefield_config = self.config.preparation.forcefield
         
         # 获取力场文件列表
-        forcefield_files = forcefield_config.get('files', [
-            "amber14/protein.ff14SB.xml", 
-            "amber14/tip3p.xml"
-        ])
+        forcefield_files = forcefield_config.get('files')
+        if not forcefield_files:
+            forcefield_files = ["amber14/protein.ff14SB.xml", "amber14/tip3p.xml"]
         
         # 创建基础力场
         forcefield = app.ForceField(*forcefield_files)
         
         # 如果需要GAFF力场并且有分子对象
-        if forcefield_config.get('use_gaff', True) and mol_sdf is not None:
+        if forcefield_config.get('use_gaff', True) and mol is not None:
             try:
-                gaff = GAFFTemplateGenerator(molecules=mol_sdf)
+                gaff = GAFFTemplateGenerator(molecules=mol)
                 forcefield.registerTemplateGenerator(gaff.generator)
                 print("  ✅ 注册GAFF力场")
             except Exception as e:
@@ -91,17 +90,20 @@ class SystemProvider:
         
         return forcefield
     
-    def center_molecule_in_box(self, modeller, forcefield, ligand_atom_count=None):
+    def center_molecule_in_box(self, modeller, ligand_atom_count=None):
         """
         将分子在水盒子中居中
         """
         print("  🎯 检查分子居中...")
         
         positions = modeller.positions
-        coords = np.array([[pos.x, pos.y, pos.z] for pos in positions._value])
         
-        print(f"    分子中心: {np.mean(coords, axis=0)}")
-        print(f"    分子边界: {np.min(coords, axis=0)} 到 {np.max(coords, axis=0)}")
+        # 计算分子边界信息（仅用于显示）
+        coords_list = [(pos.x, pos.y, pos.z) for pos in positions]
+        if coords_list:
+            coords = np.array(coords_list)
+            print(f"    分子中心: {np.mean(coords, axis=0)}")
+            print(f"    分子边界: {np.min(coords, axis=0)} 到 {np.max(coords, axis=0)}")
         
         box_vectors = modeller.topology.getPeriodicBoxVectors()
         box_center = np.array([
@@ -115,8 +117,13 @@ class SystemProvider:
         
         print(f"    检测到配体原子数量: {ligand_atom_count}")
         
-        ligand_coords = np.array([[pos.x, pos.y, pos.z] for pos in positions[:ligand_atom_count]])
-        ligand_center = np.mean(ligand_coords, axis=0)
+        # 计算配体中心
+        if ligand_atom_count > 0:
+            ligand_coords = np.array([(pos.x, pos.y, pos.z) for pos in positions[:ligand_atom_count]])
+            ligand_center = np.mean(ligand_coords, axis=0)
+        else:
+            ligand_center = box_center  # 如果没有配体，使用盒子中心
+        
         offset = np.linalg.norm(ligand_center - box_center)
         
         print(f"    配体中心: [{ligand_center[0]:.3f}, {ligand_center[1]:.3f}, {ligand_center[2]:.3f}] nm")
@@ -126,7 +133,7 @@ class SystemProvider:
         # 从配置中获取居中阈值
         centering_threshold = self.config.preparation.get('centering_threshold', 0.1)
         
-        if offset > centering_threshold:
+        if offset > centering_threshold and ligand_atom_count > 0:
             print("  🔧 分子偏离中心较远，进行修正...")
             
             translation = box_center - ligand_center
@@ -140,8 +147,8 @@ class SystemProvider:
             modeller.positions = new_positions
             print("  ✅ 分子居中修正完成")
             
-            final_positions = modeller.positions
-            ligand_coords_new = np.array([[pos.x, pos.y, pos.z] for pos in final_positions[:ligand_atom_count]])
+            # 计算修正后的偏移
+            ligand_coords_new = np.array([(pos.x, pos.y, pos.z) for pos in modeller.positions[:ligand_atom_count]])
             ligand_center_new = np.mean(ligand_coords_new, axis=0)
             offset_new = np.linalg.norm(ligand_center_new - box_center)
             
@@ -154,12 +161,14 @@ class SystemProvider:
     
     def detect_ligand_atoms(self, topology):
         """自动检测配体原子数量"""
-        atoms = list(topology.atoms())
-        if len(atoms) == 0:
+        # 更直接的方法
+        residues = list(topology.residues())
+        if not residues:
             return 0
             
-        first_residue = next(topology.residues())
+        first_residue = residues[0]
         ligand_atom_count = 0
+        
         for atom in topology.atoms():
             if atom.residue == first_residue:
                 ligand_atom_count += 1
@@ -168,7 +177,7 @@ class SystemProvider:
                 
         return ligand_atom_count
     
-    def prepare_system(self, topology, positions, mol_sdf=None):
+    def prepare_system(self, topology, positions, mol=None):
         """
         准备分子系统
         所有参数都从配置中读取
@@ -177,7 +186,7 @@ class SystemProvider:
         system_config = self.config.preparation.system
         
         # 创建力场
-        forcefield = self.create_forcefield(mol_sdf)
+        forcefield = self.create_forcefield(mol)
         modeller = app.Modeller(topology, positions)
         
         # 添加氢原子
@@ -198,13 +207,13 @@ class SystemProvider:
         
         # 获取额外的溶剂参数
         solvent_params = {}
-        if 'padding' in solvent_config:
+        if 'padding' in solvent_config and solvent_config.padding is not None:
             solvent_params['padding'] = solvent_config.padding * unit.nanometers
-        if 'positive_ion' in solvent_config:
+        if 'positive_ion' in solvent_config and solvent_config.positive_ion is not None:
             solvent_params['positiveIon'] = solvent_config.positive_ion
-        if 'negative_ion' in solvent_config:
+        if 'negative_ion' in solvent_config and solvent_config.negative_ion is not None:
             solvent_params['negativeIon'] = solvent_config.negative_ion
-        if 'ionic_strength' in solvent_config:
+        if 'ionic_strength' in solvent_config and solvent_config.ionic_strength is not None:
             solvent_params['ionicStrength'] = solvent_config.ionic_strength * unit.molar
         
         if solvent_params:
@@ -222,7 +231,7 @@ class SystemProvider:
             )
         
         # 分子居中
-        modeller, ligand_atom_count = self.center_molecule_in_box(modeller, forcefield)
+        modeller, ligand_atom_count = self.center_molecule_in_box(modeller)
         
         # 创建系统
         print("  ⚙️  创建系统...")
@@ -444,28 +453,28 @@ class SystemProvider:
                 return None
             
             # 创建分子对象（用于力场生成）
-            mol_sdf = None
+            mol = None
             try:
-                mol_sdf = Molecule.from_file(file_path)
+                mol = Molecule.from_file(file_path)
             except Exception as e:
                 print(f"  ⚠️ 创建分子对象失败，使用默认力场: {e}")
             
             # 准备系统（所有参数从配置读取）
             system, modeller, ligand_atom_count = self.prepare_system(
-                topology, positions, mol_sdf
+                topology, positions, mol
             )
             
             # 创建模拟器（所有参数从配置读取）
             simulation = self.create_simulation(modeller.topology, system, modeller.positions)
             
             # 能量最小化（所有参数从配置读取）
-            minimized_positions = self.minimize_energy(simulation)
+            self.minimize_energy(simulation)
             
             # 加热系统（所有参数从配置读取）
-            heated_positions = self.heat_system(simulation)
+            self.heat_system(simulation)
             
             # 平衡系统（所有参数从配置读取）
-            equilibrated_positions = self.equilibrate_system(simulation, system, modeller.topology)
+            self.equilibrate_system(simulation, system, modeller.topology)
             
             # 获取最终状态
             state = simulation.context.getState(
@@ -499,7 +508,7 @@ class SystemProvider:
                 'ligand_atom_count': ligand_atom_count,
                 'output_path': str(output_path),
                 'simulation': simulation,
-                'forcefield': self.create_forcefield(mol_sdf),
+                'forcefield': self.create_forcefield(mol),
                 'box_vectors': modeller.topology.getPeriodicBoxVectors()
             }
             
@@ -561,6 +570,10 @@ class SystemProvider:
         
         print(f"📖 读取到 {len(metadata)} 个分子信息")
         
+        # 初始化变量
+        successful_preparations = 0
+        preparation_results = []
+        
         # 筛选需要处理的分子
         molecules_to_process = []
         for mol_info in metadata:
@@ -592,15 +605,12 @@ class SystemProvider:
             print("✅ 没有需要处理的分子，所有分子都已准备完成")
             return {
                 'success': True,
-                'total_molecules': len(molecules_to_process),
-                'successful_preparations': successful_preparations,
-                'success_rate': success_rate,
-                'preparation_results': preparation_results,
+                'total_molecules': 0,
+                'successful_preparations': 0,
+                'success_rate': 0.0,
+                'preparation_results': [],
                 'message': '系统准备完成'
             }
-        
-        successful_preparations = 0
-        preparation_results = []
         
         # 创建更新回调函数
         def update_callback(mol_name, stage, success, additional_info=None):
@@ -637,6 +647,9 @@ class SystemProvider:
         
         # 保存简化的结果文件（用于调试）
         self.save_simplified_results(preparation_results)
+        
+        # 保存完整的准备结果（供炼金术阶段使用）
+        self.save_preparation_results(preparation_results)
         
         return {
             'success': True,
@@ -681,15 +694,20 @@ class SystemProvider:
             preparation_results: 完整的准备结果列表
         """
         if not preparation_results:
+            print("⚠️ 警告：准备结果为空，跳过保存pickle文件")
             return
         
         # 保存完整的准备结果
         output_pkl = self.prepared_systems_dir / "preparation_results.pkl"
         
-        with open(output_pkl, 'wb') as f:
-            pickle.dump(preparation_results, f)
-        
-        print(f"💾 完整准备结果保存到: {output_pkl}")
-        
-        # 同时保存一个简化的CSV版本用于查看
-        self.save_simplified_results(preparation_results)
+        try:
+            with open(output_pkl, 'wb') as f:
+                pickle.dump(preparation_results, f)
+            print(f"💾 完整准备结果保存到: {output_pkl}")
+            
+            # 同时保存一个简化的CSV版本用于查看
+            self.save_simplified_results(preparation_results)
+        except Exception as e:
+            print(f"❌ 保存准备结果失败: {e}")
+            import traceback
+            traceback.print_exc()
