@@ -1,6 +1,8 @@
 # default
 *.xyz
 *.pdb
+*.mol2
+*.sdf
 /outputs
 
 # Byte-compiled / optimized / DLL files

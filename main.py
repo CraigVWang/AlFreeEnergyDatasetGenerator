@@ -220,7 +220,6 @@ class AlchemicalDataGenerator:
         print("=" * 60)
         
         if self.preprocessor is None:
-            # 将OmegaConf转换为字典
             self.preprocessor = StructurePreprocessor(self.config, selected_formats)
         
         result = self.preprocessor.run(test_single=test_single)

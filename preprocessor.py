@@ -19,8 +19,8 @@ from openff.toolkit import Molecule
 from rdkit import Chem
 from tqdm import tqdm
 
-# 导入自定义工具
-from utils.xyz_to_pdb_converter import convert_xyz_to_pdb
+# 导入自定义工具 - 导入新的转换器
+from utils.xyz_converter import convert_xyz_to_mol2
 
 
 class StructurePreprocessor:
@@ -181,7 +181,7 @@ class StructurePreprocessor:
         for item in metadata:
             if item['name'] == molecule_name:
                 # 更新时间戳
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                timestamp = datetime.now().strftime("%Y-%m-d %H:%M:%S")
                 
                 # 更新对应阶段的状态
                 if stage == 'preprocess':
@@ -362,8 +362,8 @@ class StructurePreprocessor:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         # 确定输出文件路径和格式
-        if file_type in ['pdb', 'cif']:
-            # 对于PDB和CIF文件，直接复制到预处理目录的对应子目录
+        if file_type in ['pdb', 'cif', 'mol2', 'sdf']:
+            # 对于这些格式，保持原格式，直接复制
             output_path = output_dir / Path(file_path).name
             try:
                 shutil.copy2(file_path, output_path)
@@ -371,39 +371,32 @@ class StructurePreprocessor:
             except Exception as e:
                 print(f"❌ 复制失败 {file_path}: {e}")
                 return None
-        else:
-            # 对于其他格式，转换为PDB格式，但保持目录结构
-            output_path = output_dir / f"{mol_name}.pdb"
+        elif file_type == 'xyz':
+            # XYZ 文件转换为 MOL2 格式
+            output_path = output_dir / f"{mol_name}.mol2"
             
             try:
-                if file_type == 'sdf':
-                    mol = Molecule.from_file(file_path)
-                    mol.to_file(str(output_path), file_format='pdb')
-                    return str(output_path)
-                    
-                elif file_type == 'mol2':
-                    # 使用RDKit读取.mol2文件
-                    rdkit_mol = Chem.MolFromMol2File(file_path, removeHs=False)
-                    # 将RDKit分子对象转换为OpenFF的Molecule对象
-                    mol = Molecule.from_rdkit(rdkit_mol)
-                    mol.to_file(str(output_path), file_format='pdb')
-                    return str(output_path)
-                    
-                elif file_type == 'xyz':
-                    # 使用成熟的转换器
-                    pdb_path = convert_xyz_to_pdb(
-                        file_path, 
-                        str(output_path),
-                    )
-                    return pdb_path
-                    
+                # 使用新的转换器将 XYZ 转换为 MOL2
+                mol2_path = convert_xyz_to_mol2(
+                    file_path, 
+                    str(output_path),
+                    residue_name="LIG",
+                    chain="A"
+                )
+                
+                if mol2_path:
+                    print(f"✅ XYZ 文件已转换为 MOL2: {Path(mol2_path).name}")
+                    return mol2_path
                 else:
-                    print(f"⚠️ 跳过不支持的文件格式: {file_path}")
+                    print(f"❌ XYZ 转换失败: {file_path}")
                     return None
                     
             except Exception as e:
-                print(f"❌ 转换失败 {file_path}: {e}")
+                print(f"❌ XYZ 转换失败 {file_path}: {e}")
                 return None
+        else:
+            print(f"⚠️ 跳过不支持的文件格式: {file_path}")
+            return None
     
     def batch_process_files(self, metadata: List[Dict[str, str]], test_single: bool = False) -> List[Dict[str, str]]:
         """
@@ -444,10 +437,8 @@ class StructurePreprocessor:
                            
             if output_file:
                 # 确定输出文件类型
-                if file_type in ['pdb', 'cif']:
-                    output_file_type = file_type
-                else:
-                    output_file_type = 'pdb'
+                output_path = Path(output_file)
+                output_file_type = output_path.suffix[1:]  # 去掉点号
                 
                 # 更新元数据
                 self.update_molecule_status(
@@ -559,6 +550,7 @@ class StructurePreprocessor:
         """
         print("=" * 60)
         print("🚀 开始结构文件预处理流程")
+        print("说明: XYZ文件将自动转换为MOL2格式")
         if test_single:
             print("🧪 测试模式：只处理单个样本")
         print("=" * 60)
