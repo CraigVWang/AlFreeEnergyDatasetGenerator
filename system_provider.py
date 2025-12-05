@@ -44,25 +44,36 @@ class SystemProvider:
     
     def read_molecule_file(self, file_path: str):
         """
-        读取分子文件，支持PDB和CIF格式
+        读取分子文件，只支持PDB和CIF格式
         """
-        file_ext = Path(file_path).suffix.lower()
+        from pathlib import Path
+        import openmm.app as app
         
-        try:
-            if file_ext == '.pdb':
-                pdb = app.PDBFile(file_path)
+        file_path = Path(file_path)
+        
+        # 检查文件是否存在
+        if not file_path.exists():
+            raise FileNotFoundError(f"文件不存在: {file_path}")
+        
+        # 获取文件扩展名
+        ext = file_path.suffix.lower()
+        
+        if ext == '.pdb':
+            try:
+                pdb = app.PDBFile(str(file_path))
                 return pdb.topology, pdb.positions
-            elif file_ext == '.cif':
-                cif = app.PDBxFile(file_path)
+            except Exception as e:
+                raise ValueError(f"无法读取PDB文件 {file_path}: {e}")
+        
+        elif ext == '.cif':
+            try:
+                cif = app.PDBxFile(str(file_path))
                 return cif.topology, cif.positions
-            else:
-                # 对于预处理后的PDB文件
-                pdb = app.PDBFile(file_path)
-                return pdb.topology, pdb.positions
-                
-        except Exception as e:
-            print(f"❌ 读取文件失败 {file_path}: {e}")
-            return None, None
+            except Exception as e:
+                raise ValueError(f"无法读取CIF文件 {file_path}: {e}")
+        
+        else:
+            raise ValueError(f"不支持的文件格式: {ext}。只支持PDB(.pdb)和CIF(.cif)格式")    
     
     def create_forcefield(self, mol: Optional[Molecule] = None):
         """
